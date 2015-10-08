@@ -1,3 +1,3 @@
-# pebble-test01
+# Pebble-GoodWe
 
-a pebble app to read GoodWe solar panel data
+A pebble app to read GoodWe solar panel data
