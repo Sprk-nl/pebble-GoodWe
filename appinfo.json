@@ -3,8 +3,8 @@
     "capabilities": [
         ""
     ],
-    "companyName": "gaston.bougie@gmail.com",
-    "longName": "test01",
+    "companyName": "Bosido",
+    "longName": "GoodWe Solar statistics",
     "projectType": "pebblejs",
     "resources": {
         "media": [
@@ -32,8 +32,8 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "test01",
-    "uuid": "2769ea88-9e91-42ca-ab87-2ddabff0b6f2",
+    "shortName": "GoodWe",
+    "uuid": "06f7d9ee-e456-422c-a6a5-4f1740158b73",
     "versionCode": 1,
     "versionLabel": "1.0",
     "watchapp": {
