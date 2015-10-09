@@ -1,7 +1,7 @@
 var UI = require('ui');
 // var ajax = require('ajax');
 var Vector2 = require('vector2');
-var SolaruserID = '40aebd92-dd6e-Your-User-ID';
+var SolaruserID = '40aebd92-dd6e-4d51-8061-8e16dd5f400b';
 var SolarDate = '2015-09-29';
 var SolarDateDay = 0;
 var titletext = "GoodWe";
