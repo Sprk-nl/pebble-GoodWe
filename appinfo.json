@@ -1,7 +1,7 @@
 {
     "appKeys": {},
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "Bosido",
     "longName": "GoodWe Solar statistics",
@@ -32,7 +32,11 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "GoodWe",
+    "shortName": "GoodWe_J",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
     "uuid": "1ecb6ffc-51ed-42a8-a5ed-7b206b332553",
     "versionCode": 1,
     "versionLabel": "1.0",
