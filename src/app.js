@@ -1,9 +1,23 @@
+/**
+ * Welcome to GoodWe
+ * This application is build by Gaston Bougie for educational purposes, learning how to code a Pebble
+ *
+ * The app will connect to GoodWe webpage, receive the solar data and display a bar graph.
+ * Started building on  2015-10-01
+ * Last modification on 2015-12-22
+ *
+ * Notes:
+ * Screen resolution Pebble Time: 144x168
+ * You need to replace the var SolaruserID with your own ID
+ */
+
+// Import the requirements
 var UI = require('ui');
-// var ajax = require('ajax');
-// Screen resolution Pebble Time: 144x168
 var Vector2 = require('vector2');
-var SolaruserID = 'YOUR OWN GOODWE ID LIKE r27ubd92-g3e6e-4d51-23434-8e16dd5f42352345b';
-var SolarDate = '2015-09-29';
+var Light = require('ui/light'); // Adding backlight control
+
+
+var SolaruserID = '--------';
 var SolarDateDay = 0;
 var solar_HourPower = [];
 var solar_PowerScale = 1;
@@ -12,6 +26,8 @@ var solar_current_count;
 var MaxSolarCapacity = 4600;
 var capacity = 4600;
 var solar_HourPowerMAX;
+// Enable logging: change LogActive to 1
+var LogActive = 1;
 
 var sc_item_data = [];
 var sc_item = [];
@@ -38,9 +54,72 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 
+// Create main Card
+var main = new UI.Card({
+  title: 'GoodWe',
+  style: 'small',
+  icon: 'images/menu_icon.png',
+  subtitle: getdate(SolarDateDay),
+  body: '\nUp/Down for date.\nSelect for result.',
+  subtitleColor: 'indigo', // Named colors
+  bodyColor: '#9a0036' // Hex colors
+    
+});
+// Defining buttons for Main Card
+main.on('click', 'select', function(e) {
+// Showing graph
+show_main_window();
+});
+main.on('click', 'up', function(e) {
+  if (SolarDateDay === 0) {
+    if (LogActive) console.log("Already at most current day");
+  }
+  else {
+    SolarDateDay = (SolarDateDay + 1);
+    main.subtitle( getdate(SolarDateDay) );
+    main.show();
+  }
+});
+main.on('click', 'down', function(e) {
+  SolarDateDay = (SolarDateDay - 1);
+  main.subtitle( getdate(SolarDateDay) );
+  main.show();
+});
+
+
+
 // Create main_window
 var main_window = new UI.Window({
   fullscreen:true  
+});
+// Defining buttons for Main Window
+main_window.on('click', 'select', function() {
+  if (LogActive) console.log("Pressed select");
+    main_window.remove();
+    show_main_window(); // refreshing and reloading the window
+});
+main_window.on('click', 'up', function() {
+  if (LogActive) console.log("Pressed up");
+  if (SolarDateDay === 0) {
+    if (LogActive) console.log("Already at most current day");
+  }
+  else {
+    SolarDateDay = (SolarDateDay + 1);
+    main_window.remove();
+    show_main_window();
+
+  }
+});
+main_window.on('click', 'down', function() {
+  if (LogActive) console.log("Pressed down");
+  SolarDateDay = (SolarDateDay - 1);
+    main_window.remove();
+    show_main_window();
+});
+main_window.on('click', 'back', function() {
+  if (LogActive) console.log("Pressed back");
+  main_window.hide();
+  main.subtitle( getdate(SolarDateDay) );
 });
 
 
@@ -62,11 +141,10 @@ var window_top_text_Right = new UI.Text({
   textAlign: 'right'
 });
 
-
 var window_middle = new UI.Rect({
   position: new Vector2(0, 20),
   size: new Vector2(144, 128),
-  backgroundColor: 'white'
+  backgroundColor: 'yellow'
 });
 
 var window_bottom_text_Left = new UI.Text({
@@ -88,67 +166,44 @@ var window_bottom_text_Right = new UI.Text({
 });
 
 
-// Define the bars in the graph
+// Define the vertical bar template in the graph
 var chartBar = new UI.Rect({
   position: new Vector2(0, 0) ,
   size: new Vector2(0, 0) ,
   backgroundColor: 'black'
 }); 
 
+// Defining various functions
+function updateTopTextLeft() {
+    // UPDATING BOTTOW TEXT:
+    if (LogActive) console.log("updateTopTextLeft:               " + getdate(SolarDateDay) );
+  window_top_text_Left.text( getdate(SolarDateDay) );
+}
 
-// Defining buttons
-main_window.on('click', 'up', function() {
-  console.log("click: up");
-});
-
-main_window.on('click', 'select', function() {
-  console.log("click: select");
-  menu.show();
-});
-
-main_window.on('click', 'back', function() {
-  console.log("click: back");
-});
-
-main_window.on('click', 'down', function() {
-  console.log("click: down");
-  removeGraphData();
-  show_main_window();
-  SolarDateDay = SolarDateDay + 1;
-  getdate(SolarDateDay);
-  addrasterXBar();
-  getSolarData(SolarDate);
-  updateTitleText();
-});
-
-
-
-function updateTitleText(){
-  console.log("Function: updateTitleText");
-  window_top_text_Left.text(SolarDate);
-  window_top_text_Right.text(sc_item_data[5]);
+function updateTopTextRight() {
+    // UPDATING BOTTOW TEXT:
+    if (LogActive) console.log("updateTopTextRight:              " + sc_item_data[5].toString() );
+    window_top_text_Right.text(sc_item_data[5]);
 }
 
 function updateBottomTextLeft() {
     // UPDATING BOTTOW TEXT:
-  console.log("updateBottomTextLeft:   max: " + solar_HourPowerMAX.toString() );
+    if (LogActive) console.log("updateBottomTextLeft:   max:      " + solar_HourPowerMAX.toString() );
   window_bottom_text_Left.text(solar_HourPowerMAX.toString() + "W" );
 }
 
 function updateBottomTextRight() {
     // UPDATING BOTTOW TEXT:
-  console.log("updateBottomTextRight:   Current: " + sc_item_data[0].toString());
+    if (LogActive) console.log("updateBottomTextRight:   Current: " + sc_item_data[0].toString());
   window_bottom_text_Right.text(sc_item_data[0].toString());
 }
 
-
-
 function getCurrentSolarData(date) {
-  console.log("Function: getCurrentSolarData");
+    if (LogActive) console.log("Function: getCurrentSolarData");
   // Construct URL
   var url_current = 'http://www.goodwe-power.com/Mobile/GetMyPowerStationById?stationID=' + SolaruserID;
   // Sending complete URL for debug
-  console.log('url_current = ' + url_current);
+    if (LogActive) console.log('url_current = ' + url_current);
   
     // Send request to URL
     xhrRequest(url_current, 'GET', 
@@ -157,7 +212,7 @@ function getCurrentSolarData(date) {
       // solar_json contains java objects
       var solar_current = JSON.parse(responseText);
       solar_current_count = Object.keys(solar_current).length;
-      console.log("solar_current_count = " + solar_current_count);
+        if (LogActive) console.log("solar_current_count = " + solar_current_count);
         
         // importing json data to array[] NOT WORKING BECAUSE OF DYNAMIC sc_item[sc_counter]
 //        for ( var sc_counter = 0; sc_counter < solar_current_count; sc_counter++ ) {
@@ -180,18 +235,20 @@ sc_item_data[11] = solar_current.treesaved ;
 sc_item_data[12] = solar_current.totaltreesaved ;
         
         
-        console.log("Function: update Title text from getCurrentSolarData");
-        updateTitleText();
+          if (LogActive) console.log("Function: update Title text from getCurrentSolarData");
+        updateTopTextLeft();
+        updateTopTextRight();
+        updateBottomTextRight();
       }
   );
 }
         
 function getSolarData(date) {
-  console.log("Function: getSolarData");
+    if (LogActive) console.log("Function: getSolarData");
               // Construct URL
   var url = 'http://www.goodwe-power.com/Mobile/GetPacLineChart?stationId=' + SolaruserID + '&date=' + date;
   // Sending complete URL for debug
-  console.log('url = ' + url);
+    if (LogActive) console.log('url = ' + url);
   
     // Send request to URL
     xhrRequest(url, 'GET', 
@@ -200,28 +257,30 @@ function getSolarData(date) {
       // solar_json contains java objects
       var solar_json = JSON.parse(responseText);
       var solar_json_count = Object.keys(solar_json).length;
-
+      
+          
         // importing json data to array[]
         for ( var counter = 0; counter < solar_json_count; counter++ ) {
           solar_HourPower[counter] = Number(solar_json[counter].HourPower);
         }
+        updateTopTextRight();
         
         // defining the scale to use:
-        console.log ( "Defining the scale for Y axis");
-        console.log ( "solar_HourPower array : " + solar_HourPower.toString() );
+          if (LogActive) console.log ( "Defining the scale for Y axis");
+          if (LogActive) console.log ( "solar_HourPower array : " + solar_HourPower.toString() );
         solar_HourPowerMAX = Math.max.apply(Math, solar_HourPower);      
-        console.log ("solar_HourPowerMAX : " + solar_HourPowerMAX + "W");
-        console.log ("capacity           : " + capacity + "W");
+          if (LogActive) console.log ("solar_HourPowerMAX : " + solar_HourPowerMAX + "W");
+          if (LogActive) console.log ("capacity           : " + capacity + "W");
         var testscale = Math.round( capacity / solar_HourPowerMAX );       
         if ( testscale <= 1) {
           solar_PowerScale = 1;
-          console.log("Data Scale set to 1, was to low : " + testscale);
+            if (LogActive) console.log("Data Scale set to 1, was to low : " + testscale);
         } else if (testscale >= 25) {
           solar_PowerScale = 1;
-          console.log("Data Scale set to 1, was to high : " + testscale);  
+            if (LogActive) console.log("Data Scale set to 1, was to high : " + testscale);  
         }   else {
           solar_PowerScale = testscale;
-          console.log("Data Scale = " + solar_PowerScale);
+            if (LogActive) console.log("Data Scale = " + solar_PowerScale);
           } 
         
         
@@ -231,7 +290,6 @@ function getSolarData(date) {
 //        }
         addGraphData();
         updateBottomTextLeft();
-        updateBottomTextRight();
       }
     ); 
 
@@ -286,7 +344,7 @@ var line1 = new UI.Rect({
 }
 
 function addGraphData(){
-  console.log("Function: addGraphData");
+    if (LogActive) console.log("Function: addGraphData");
 // Adding graph data
 // Screen resolution: 144x168
 // BAR SIZE: X starts at 0, Y starts at 47
@@ -296,12 +354,9 @@ var rectBarStartX = 0;
 var rectBarStartYmin = 20;
 var rectBarStartYmax = 148;
 var barSizePerWatt = Number(Math.round( MaxSolarCapacity / (rectBarStartYmax - rectBarStartYmin) ) );
-//    console.log("barSizePerWatt      : " + barSizePerWatt); 
-//    console.log("solar_HourPower[47] : " + solar_HourPower[47]);
-
-
-
-
+//      if (LogActive) console.log("barSizePerWatt      : " + barSizePerWatt); 
+//      if (LogActive) console.log("solar_HourPower[47] : " + solar_HourPower[47]);
+  
   
 // Create vertical bar's in graph
 for ( var x = 0; x <= 144; x++ ) {
@@ -323,13 +378,9 @@ chartBar = new UI.Rect({
 } 
 }
 }
-
-function removeGraphData() {
-  main_window.clear();
-}
   
 function getdate(SolarDateDay){
-console.log("Function: getdate");
+  if (LogActive) console.log("Function: getdate");
 var dateObj = new Date();
 
 //change day dynamic
@@ -339,11 +390,12 @@ var month = dateObj.getUTCMonth() + 1; //months from 1-12
 var day = dateObj.getUTCDate();
 var year = dateObj.getUTCFullYear();
 SolarDate = year + "-" + month + "-" + day;
-  console.log("getdate result: " + year + "-" + month + "-" + day);
+    if (LogActive) console.log("getdate result: " + year + "-" + month + "-" + day);
+return SolarDate;
 }
 
 function addrasterXBar(){
-  console.log("addrasterXBar: create X raster for 0, 6, 12, 18 and 24h");
+    if (LogActive) console.log("addrasterXBar: create X raster for 0, 6, 12, 18 and 24h");
   rasterX[0] = 0;
   rasterX[1] = 144/2/2;
   rasterX[2] = 144/2;  
@@ -352,7 +404,7 @@ function addrasterXBar(){
   
 for ( var rx = 0; rx <= 4; rx++ ) {
 var rasterXposX = rasterX[rx] - 1;
-var rasterXposY = 150;
+var rasterXposY = 149;
 var rasterXsizX = 3;
 var rasterXsizY = 5;
   // Logging of all bar's:
@@ -368,24 +420,31 @@ var rasterXBar = new UI.Rect({
 }
 }
 
+
 function show_main_window(){
-  console.log("Function: show_main_window");
+    if (LogActive) console.log("Function: show_main_window");
+ 
+  getCurrentSolarData( getdate(SolarDateDay) );
+  getSolarData( getdate(SolarDateDay) );
+  
   // adding title and subtitle to the main_window
   main_window.add(window_top_text_Left);
   main_window.add(window_top_text_Right);
   main_window.add(window_middle);
- // main_window.add(window_bottom);
   main_window.add(window_bottom_text_Left);
   main_window.add(window_bottom_text_Right);
   // Display the main_window
   main_window.show();
+  // Turn on the light for a longer time.
+  Light.on('long');
+
+  addrasterXBar();
+  addHorizontalBars();
+  updateTopTextLeft();
+
 }
 
 
-show_main_window();
-addrasterXBar();
-getdate(SolarDateDay);
-getCurrentSolarData(SolarDate);
-addHorizontalBars();
-getSolarData(SolarDate);
-// updateTitleText();
+
+// Showing the main Card
+main.show();
